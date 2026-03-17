@@ -18312,6 +18312,28 @@ def _run_server(args):
     _start_fleet_maintenance_thread()
     _start_budget_monitor_thread()
 
+    # ── Register blueprints ─────────────────────────────────────────────────
+    app.register_blueprint(bp_alerts)
+    app.register_blueprint(bp_auth)
+    app.register_blueprint(bp_brain)
+    app.register_blueprint(bp_budget)
+    app.register_blueprint(bp_channels)
+    app.register_blueprint(bp_components)
+    app.register_blueprint(bp_config)
+    app.register_blueprint(bp_crons)
+    app.register_blueprint(bp_fleet)
+    app.register_blueprint(bp_gateway)
+    app.register_blueprint(bp_health)
+    app.register_blueprint(bp_history)
+    app.register_blueprint(bp_logs)
+    app.register_blueprint(bp_memory)
+    app.register_blueprint(bp_otel)
+    app.register_blueprint(bp_overview)
+    app.register_blueprint(bp_security)
+    app.register_blueprint(bp_sessions)
+    app.register_blueprint(bp_usage)
+    app.register_blueprint(bp_version)
+
     try:
         print(BANNER.format(version=__version__))
         if WORKSPACE_REGISTRY and WORKSPACE_REGISTRY.is_multi():
