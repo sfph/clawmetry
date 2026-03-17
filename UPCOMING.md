@@ -31,12 +31,18 @@
 - Visualize request lifecycle: message in, model call, tool calls, response out
 - Span waterfall view for debugging latency
 
-## Planned
+## Recently Shipped
 
 ### Multi-Agent Dashboard
-- Monitor multiple OpenClaw instances from one dashboard
-- Aggregate spending across agents
-- Fleet health overview
+- Monitor multiple OpenClaw agents from one dashboard
+- Auto-discovers agents via `openclaw agents list --json`, gateway API, or filesystem scan
+- Agent selector bar to filter or view all agents at once
+- Per-agent token usage, spending, sessions, transcripts, and memory files
+- Agent badges on sessions and transcripts in aggregated view
+- Selection persisted across page refreshes
+- Supports `--workspace` (repeatable) and `CLAWMETRY_WORKSPACES` env var for manual configuration
+
+## Planned
 
 ### Smart Alerts
 - Anomaly detection on token usage (sudden spikes)

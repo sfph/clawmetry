@@ -15,6 +15,7 @@ class Session:
     total_tokens: int = 0
     kind: str = "direct"
     label: str = ""
+    agent_id: str = ""
     extra: Dict[str, Any] = field(default_factory=dict)
 
 
@@ -43,6 +44,7 @@ class MemoryFile:
     size: int
     modified: Optional[str] = None
     content: Optional[str] = None
+    agent_id: str = ""
 
 
 @dataclass
