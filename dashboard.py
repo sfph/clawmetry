@@ -148,6 +148,70 @@ _budget_paused_reason = ''
 _budget_alert_cooldowns = {}  # rule_id -> last_fired_timestamp
 _AGENT_DOWN_SECONDS = 300  # 5 min with no OTLP data = agent down alert
 
+# ── Heartbeat Gap Alerting ─────────────────────────────────────────────
+_last_heartbeat_ts = 0
+_heartbeat_interval_sec = 1800  # default 30 min, auto-detected from config
+_heartbeat_silent_since = 0
+
+
+def _detect_heartbeat_interval():
+    """Read heartbeat interval from OpenClaw config."""
+    global _heartbeat_interval_sec
+    for cf in [os.path.expanduser('~/.clawdbot/openclaw.json'), os.path.expanduser('~/.openclaw/openclaw.json')]:
+        try:
+            with open(cf) as f:
+                cfg = json.load(f)
+            hb = cfg.get('agents', {}).get('defaults', {}).get('heartbeat', {})
+            every = hb.get('every', '')
+            if every:
+                import re as _re_hb
+                m = _re_hb.match(r'^(\d+)\s*(m|min|h|hr|s|sec)?$', str(every).strip().lower())
+                if m:
+                    val = int(m.group(1))
+                    unit = m.group(2) or 'm'
+                    if unit.startswith('h'):
+                        _heartbeat_interval_sec = val * 3600
+                    elif unit.startswith('s'):
+                        _heartbeat_interval_sec = val
+                    else:
+                        _heartbeat_interval_sec = val * 60
+                    return
+        except Exception:
+            continue
+
+
+def _record_heartbeat():
+    """Record that a heartbeat event was observed."""
+    global _last_heartbeat_ts, _heartbeat_silent_since
+    _last_heartbeat_ts = time.time()
+    _heartbeat_silent_since = 0
+
+
+def _get_heartbeat_status():
+    """Return heartbeat gap status for the API."""
+    now = time.time()
+    interval = _heartbeat_interval_sec
+    threshold = interval * 1.5
+    gap_sec = (now - _last_heartbeat_ts) if _last_heartbeat_ts > 0 else 0
+    status = 'unknown'
+    if _last_heartbeat_ts == 0:
+        status = 'unknown'
+    elif gap_sec <= interval:
+        status = 'ok'
+    elif gap_sec <= threshold:
+        status = 'warning'
+    else:
+        status = 'silent'
+    return {
+        'status': status,
+        'last_heartbeat_ts': _last_heartbeat_ts,
+        'gap_seconds': int(gap_sec) if _last_heartbeat_ts > 0 else None,
+        'interval_seconds': interval,
+        'threshold_seconds': int(threshold),
+        'silent_since': _heartbeat_silent_since if _heartbeat_silent_since > 0 else None,
+    }
+
+
 # ── OTLP Metrics Store ─────────────────────────────────────────────────
 METRICS_FILE = None  # Set via CLI/env, defaults to {WORKSPACE}/.clawmetry-metrics.json
 _metrics_lock = threading.Lock()
@@ -13831,7 +13895,7 @@ def api_channel_telegram():
     for lf in log_files:
         try:
             # Pre-filter: outbound = "sendMessage ok", inbound via JSONL
-            _grep_lines = _grep_log_file(lf, 'sendMessage ok\|sendMessage failed\|telegram message failed')
+            _grep_lines = _grep_log_file(lf, 'sendMessage ok|sendMessage failed|telegram message failed')
             for line in _grep_lines:
                 line = line.strip()
                 if not line:
@@ -14053,7 +14117,7 @@ def api_channel_imessage():
                 continue
             for lf in sorted(glob.glob(os.path.join(ld, '*.log')), reverse=True)[:2]:
                 try:
-                    _grep_lines = _grep_log_file(lf, 'imessage\\|iMessage\\|messageChannel=imessage')
+                    _grep_lines = _grep_log_file(lf, 'imessage|iMessage|messageChannel=imessage')
                     for line in _grep_lines:
                         line = line.strip()
                         if not line:
@@ -14110,7 +14174,7 @@ def api_channel_whatsapp():
 
     for lf in log_files:
         try:
-            _grep_lines = _grep_log_file(lf, 'messageChannel=whatsapp\\|whatsapp.*deliver')
+            _grep_lines = _grep_log_file(lf, 'messageChannel=whatsapp|whatsapp.*deliver')
             for line in _grep_lines:
                 line = line.strip()
                 if not line:
@@ -14195,7 +14259,7 @@ def api_channel_signal():
 
     for lf in log_files:
         try:
-            _grep_lines = _grep_log_file(lf, 'messageChannel=signal\\|signal.*deliver')
+            _grep_lines = _grep_log_file(lf, 'messageChannel=signal|signal.*deliver')
             for line in _grep_lines:
                 line = line.strip()
                 if not line:
