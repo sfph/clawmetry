@@ -47,7 +47,7 @@ class LocalDataProvider(ClawMetryDataProvider):
             self._sessions_index_cache = {}
         return self._sessions_index_cache or {}
 
-    def list_sessions(self, limit: int = 30, include_subagents: bool = True,
+    def list_sessions(self, limit: Optional[int] = 30, include_subagents: bool = True,
                       since_ms: Optional[int] = None) -> List[Session]:
         index = self.get_session_index()
         sessions = []
@@ -74,7 +74,7 @@ class LocalDataProvider(ClawMetryDataProvider):
                 extra=meta,
             ))
         sessions.sort(key=lambda s: s.updated_at, reverse=True)
-        return sessions[:limit]
+        return sessions[:limit] if limit else sessions
 
     def get_session(self, session_id: str) -> Optional[Session]:
         index = self.get_session_index()

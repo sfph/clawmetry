@@ -77,7 +77,7 @@ class ClawMetryDataProvider(ABC):
     # ── Sessions ──────────────────────────────────────────────────────────────
 
     @abstractmethod
-    def list_sessions(self, limit: int = 30, include_subagents: bool = True,
+    def list_sessions(self, limit: Optional[int] = 30, include_subagents: bool = True,
                       since_ms: Optional[int] = None) -> List[Session]:
         """Return recent sessions, newest first."""
         ...

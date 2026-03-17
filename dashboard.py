@@ -3945,8 +3945,8 @@ function agentLabel(agentId) {
 
 function stripNsId(namespacedId) {
   if (!namespacedId) return '';
-  var idx = namespacedId.indexOf(':');
-  return idx !== -1 ? namespacedId.substring(idx + 1) : namespacedId;
+  var idx = namespacedId.indexOf('@@');
+  return idx !== -1 ? namespacedId.substring(idx + 2) : namespacedId;
 }
 
 function agentBadge(agentId) {

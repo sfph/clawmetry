@@ -23,12 +23,16 @@ from clawmetry.workspaces import AgentWorkspace, WorkspaceRegistry
 
 logger = logging.getLogger("clawmetry.providers.multi")
 
-_SEP = ":"
+_SEP = "@@"
 
 
 def _ns_session_id(agent_id: str, session_id: str) -> str:
-    """Namespace a session ID: ``agent_id:original_id``."""
-    if _SEP in session_id and session_id.split(_SEP, 1)[0] == agent_id:
+    """Namespace a session ID: ``agent_id@@original_id``.
+
+    Uses ``@@`` as separator to avoid collision with ``:`` which appears
+    in raw OpenClaw session IDs (e.g. ``agent:main:subagent:xyz``).
+    """
+    if session_id.startswith(agent_id + _SEP):
         return session_id
     return f"{agent_id}{_SEP}{session_id}"
 
@@ -98,7 +102,7 @@ class MultiWorkspaceProvider(ClawMetryDataProvider):
         merged: List[Session] = []
         for aid, provider in self._iter_providers(agent_id):
             for s in provider.list_sessions(
-                limit=0,
+                limit=None,
                 include_subagents=include_subagents,
                 since_ms=since_ms,
             ):
